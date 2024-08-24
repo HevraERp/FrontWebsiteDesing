@@ -1,4 +1,3 @@
-
 "use client";
 import { useSearchParams } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
@@ -9,8 +8,6 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { createContext } from "vm";
-
-
 
 const ReviewFormWrapper = styled.div`
   background-color: #f9f9f9;
@@ -64,7 +61,7 @@ const RatingWrapper = styled.div`
 
 const Star = styled.span<{ selected: boolean }>`
   font-size: 24px;
-  color: ${({ selected }) => (selected ? '#FFD700' : '#ccc')};
+  color: ${({ selected }) => (selected ? "#FFD700" : "#ccc")};
   margin-right: 5px;
   cursor: pointer;
 `;
@@ -82,9 +79,6 @@ const SubmitButton = styled.button`
     background-color: #34156a;
   }
 `;
-
-
-
 
 const Container = styled.div`
   max-width: 1100px;
@@ -196,8 +190,8 @@ interface TabButtonProps {
 }
 
 const TabButton = styled.button<TabButtonProps>`
-  background-color: ${({ active }) => (active ? '#000' : '#f0f0f0')};
-  color: ${({ active }) => (active ? 'white' : '#333')};
+  background-color: ${({ active }) => (active ? "#000" : "#f0f0f0")};
+  color: ${({ active }) => (active ? "white" : "#333")};
   padding: 10px 20px;
   border: none;
   border-radius: 4px;
@@ -205,17 +199,14 @@ const TabButton = styled.button<TabButtonProps>`
   cursor: pointer;
   transition: background-color 0.25s ease-in-out;
   &:hover {
-    background-color: ${({ active }) => (active ? '#000' : '#e0e0e0')};
+    background-color: ${({ active }) => (active ? "#000" : "#e0e0e0")};
   }
 `;
-
 
 const Reviewresult = styled.div`
   font-size: 20px;
   padding-left: 10px;
-  
 `;
-
 
 const TabContent = styled.div`
   padding: 12px;
@@ -268,22 +259,23 @@ const Relatedlink = styled(Link)`
   text-decoration: none;
 `;
 
-
 export default function ProductPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
+  const [activeTab, setActiveTab] = useState<"description" | "reviews">(
+    "description"
+  );
   const [quantity, setQuantity] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Track user login status
   const [userId, setUserId] = useState<string | null>(null); // Store the user's ID
   const { addToCart } = useContext(Cartcontext);
   const [rating, setRating] = useState(0);
-const [reviews, setReviews] = useState <any []>([]);
-  const [content, setContent] = useState('');
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [content, setContent] = useState("");
 
   const searchParams = useSearchParams();
-  const id = searchParams?.get('id') || '';
+  const id = searchParams?.get("id") || "";
 
   useEffect(() => {
     fetchReviews();
@@ -294,55 +286,61 @@ const [reviews, setReviews] = useState <any []>([]);
   const fetchData = async () => {
     try {
       const { data: products, error: productError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id);
+        .from("products")
+        .select("*")
+        .eq("id", id);
 
       if (productError) {
         throw productError;
       }
 
-      const formattedProducts = products?.map(product => ({
+      const formattedProducts = products?.map((product) => ({
         id: product.id,
         name: product.name,
         image: product.img_url,
         price: product.price,
         description: product.description,
         quantity: product.quantity,
-        category: product.category_id
+        category: product.category_id,
       }));
 
       setProducts(formattedProducts);
       setQuantity(formattedProducts[0]?.quantity || 1);
       setError(null);
 
-      const { data: relatedProducts, error: relatedProductError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('category_id', formattedProducts[0]?.category)
-        .neq('id', id)
-        .limit(3);
+      const { data: relatedProducts, error: relatedProductError } =
+        await supabase
+          .from("products")
+          .select("*")
+          .eq("category_id", formattedProducts[0]?.category)
+          .neq("id", id)
+          .limit(3);
 
       if (relatedProductError) {
         throw relatedProductError;
       }
 
-      setRelatedProducts(relatedProducts?.map(product => ({
-        id: product.id,
-        name: product.name,
-        image: product.img_url,
-        price: product.price,
-        description: product.description
-      })));
+      setRelatedProducts(
+        relatedProducts?.map((product) => ({
+          id: product.id,
+          name: product.name,
+          image: product.img_url,
+          price: product.price,
+          description: product.description,
+        }))
+      );
     } catch (error) {
-      console.error('Error fetching data:', error);
-      setError('Failed to fetch product data.');
+      console.error("Error fetching data:", error);
+      setError("Failed to fetch product data.");
     }
   };
 
   const checkUserSession = async () => {
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
       if (sessionError) {
         throw sessionError;
@@ -351,50 +349,53 @@ const [reviews, setReviews] = useState <any []>([]);
       if (session && session.user) {
         const userId_INAUTHENTICATE_TABLE = session.user.email;
         const { data: user, error: userError } = await supabase
-          .from('clients')
-          .select('id')
-          .eq('email', userId_INAUTHENTICATE_TABLE);
+          .from("clients")
+          .select("id")
+          .eq("email", userId_INAUTHENTICATE_TABLE);
 
-        const user_id = user[0]?.id || null;
+        const user_id = user?.[0]?.id || null;
         setUserId(user_id);
         setIsLoggedIn(true);
       } else {
         setIsLoggedIn(false);
       }
     } catch (error) {
-      console.error('Error checking user session:', error);
+      console.error("Error checking user session:", error);
       setIsLoggedIn(false);
     }
   };
 
-  const handleAddToCart = (productId: any) => {
-    if (quantity < 1 || quantity > (products[0]?.quantity || 0)) {
-      setError('Out of stock or invalid quantity.');
-      return;
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuantity = Number(e.target.value);
+  
+    if (!isNaN(newQuantity) && newQuantity > 0) {
+      setQuantity(newQuantity);
+    } else {
+      setQuantity(1); // Ensure minimum quantity is 1 or handle error
     }
-    addToCart({ id: productId, quantity });
+  };
+  
+  const handleAddToCart = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      if (quantity > 0 && quantity <= product.quantity) {
+        // Logic to add to cart
+        console.log('Item added to cart');
+      } else {
+        console.log('Invalid quantity');
+      }
+    } else {
+      console.log('Product not found');
+    }
   };
 
-  const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newQuantity = Number(event.target.value);
-    if (newQuantity < 1) {
-      setQuantity(1);
-      setError('Quantity cannot be less than 1.');
-    } else if (newQuantity > (products[0]?.quantity || 0)) {
-      setQuantity(products[0]?.quantity || 0);
-      setError('Out of stock.');
-    } else {
-      setQuantity(newQuantity);
-      setError(null);
-    }
-  };
 
   const fetchReviews = async () => {
     try {
       const { data: reviewData, error: reviewError } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('product_id', id)
+        .from("reviews")
+        .select("*")
+        .eq("product_id", id)
         .limit(3);
 
       if (reviewError) {
@@ -403,31 +404,30 @@ const [reviews, setReviews] = useState <any []>([]);
 
       setReviews(reviewData);
     } catch (error) {
-      console.error('Error fetching reviews:', error);
+      console.error("Error fetching reviews:", error);
     }
   };
 
-
   const handleRating = (rate: number) => setRating(rate);
 
-  const handleReviewSubmit = async (event: { preventDefault: () => void; }) => {
+  const handleReviewSubmit = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
 
     if (content.trim().length === 0) {
-      setError('Review cannot be empty.');
+      setError("Review cannot be empty.");
       return;
     }
 
     try {
       const { data: reviewData, error: reviewError } = await supabase
-        .from('reviews')
+        .from("reviews")
         .insert([
           {
             user_id: userId,
             product_id: id,
             rating: rating,
             comments: content,
-          }
+          },
         ])
         .select();
 
@@ -435,21 +435,18 @@ const [reviews, setReviews] = useState <any []>([]);
         throw reviewError;
       }
 
-      setContent('');
-      setRating(0)
+      setContent("");
+      setRating(0);
       setError(null);
       fetchReviews(); // Refresh reviews after submission
     } catch (error) {
-      console.error('Error submitting review:', error);
-      setError('Failed to submit review. Please try again.');
+      console.error("Error submitting review:", error);
+      setError("Failed to submit review. Please try again.");
     }
   };
 
-
-  
-
   const renderTabContent = (product: any) => {
-    if (activeTab === 'description') {
+    if (activeTab === "description") {
       return (
         <>
           <TabContent>{product.description}</TabContent>
@@ -459,7 +456,10 @@ const [reviews, setReviews] = useState <any []>([]);
               {relatedProducts.map((relatedProduct) => (
                 <RelatedProduct key={relatedProduct.id}>
                   <Relatedlink href={`/Product/?id=${relatedProduct.id}`}>
-                    <RelatedImage src={relatedProduct.image} alt={relatedProduct.name} />
+                    <RelatedImage
+                      src={relatedProduct.image}
+                      alt={relatedProduct.name}
+                    />
                     <RelatedTitle>{relatedProduct.name}</RelatedTitle>
                   </Relatedlink>
                 </RelatedProduct>
@@ -473,45 +473,56 @@ const [reviews, setReviews] = useState <any []>([]);
     return (
       <TabContent>
         <h4>Customer Reviews</h4>
-          {reviews.length > 0 ? (
-            reviews.map((review, index) => (
-              <div key={index}>
-                <p><strong>Rating:</strong> {review.rating} / 5</p>
-                <p><strong>Comment:</strong> {review.comments}</p>
-                <hr />
-              </div>
-            ))
-          ) : (
-            <p>No reviews yet. Be the first to review!</p>
-          )}
-        {isLoggedIn ? (
-        <ReviewFormWrapper>
-        <FormTitle>Submit Your Review</FormTitle>
-        <form  onSubmit={handleReviewSubmit}>
-          <FormGroup>
-            <Label>Rating</Label>
-            <RatingWrapper>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} selected={star <= rating} onClick={() => handleRating(star)}>
-                  ★
-                </Star>
-              ))}
-            </RatingWrapper>
-          </FormGroup>
-          <FormGroup>
-            <Label>Review</Label>
-            <TextArea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your review here"
-              required
-            />
-          </FormGroup>
-          <SubmitButton type="submit">Submit Review</SubmitButton>
-        </form>
-      </ReviewFormWrapper>
+        {reviews.length > 0 ? (
+          reviews.map((review, index) => (
+            <div key={index}>
+              <p>
+                <strong>Rating:</strong> {review.rating} / 5
+              </p>
+              <p>
+                <strong>Comment:</strong> {review.comments}
+              </p>
+              <hr />
+            </div>
+          ))
         ) : (
-          <ErrorMessage>Please log in to submit a review. <Link href="/login">Login here</Link>.</ErrorMessage>
+          <p>No reviews yet. Be the first to review!</p>
+        )}
+        {isLoggedIn ? (
+          <ReviewFormWrapper>
+            <FormTitle>Submit Your Review</FormTitle>
+            <form onSubmit={handleReviewSubmit}>
+              <FormGroup>
+                <Label>Rating</Label>
+                <RatingWrapper>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      selected={star <= rating}
+                      onClick={() => handleRating(star)}
+                    >
+                      ★
+                    </Star>
+                  ))}
+                </RatingWrapper>
+              </FormGroup>
+              <FormGroup>
+                <Label>Review</Label>
+                <TextArea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Write your review here"
+                  required
+                />
+              </FormGroup>
+              <SubmitButton type="submit">Submit Review</SubmitButton>
+            </form>
+          </ReviewFormWrapper>
+        ) : (
+          <ErrorMessage>
+            Please log in to submit a review.{" "}
+            <Link href="/login">Login here</Link>.
+          </ErrorMessage>
         )}
       </TabContent>
     );
@@ -522,7 +533,7 @@ const [reviews, setReviews] = useState <any []>([]);
       <Header />
       <Container>
         <ProductsGrid>
-          {products.map(product => (
+          {products.map((product) => (
             <ProductWrapper key={product.id}>
               <ImageWrapper>
                 <MainImage src={product.image} alt={product.name} />
@@ -535,16 +546,17 @@ const [reviews, setReviews] = useState <any []>([]);
                     <ErrorMessage>Out of stock</ErrorMessage>
                   ) : (
                     <>
-                      <QuantityInput
-                        type="number"
-                        value={quantity}
-                        onChange={handleQuantityChange}
-                        min="1"
-                        max={product.quantity}
+           <QuantityInput
+                          type="number"
+                          value={quantity}
+                          onChange={handleQuantityChange}
+                          min="1"
+                          max={products[0]?.quantity || 0}
                       />
                       <Primarybtn
-                        onClick={() => handleAddToCart(product.id)}
-                        disabled={quantity < 1 || quantity > product.quantity}
+                    onClick={() => handleAddToCart(products[0].id)}
+                    disabled
+                    
                       >
                         Add to Cart
                       </Primarybtn>
@@ -561,14 +573,14 @@ const [reviews, setReviews] = useState <any []>([]);
           <TabWrapper>
             <TabHeader>
               <TabButton
-                active={activeTab === 'description'}
-                onClick={() => setActiveTab('description')}
+                active={activeTab === "description"}
+                onClick={() => setActiveTab("description")}
               >
                 Description
               </TabButton>
               <TabButton
-                active={activeTab === 'reviews'}
-                onClick={() => setActiveTab('reviews')}
+                active={activeTab === "reviews"}
+                onClick={() => setActiveTab("reviews")}
               >
                 Reviews
               </TabButton>

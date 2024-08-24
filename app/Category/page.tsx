@@ -168,6 +168,7 @@ function Category() {
   const [products, setProducts] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<Set<string>>(new Set());
+  const [categoryName, setCategoryName] = useState<string>('');
 
   const { addToCart } = useContext(Cartcontext);
   const searchparams = useSearchParams();
@@ -175,6 +176,19 @@ function Category() {
 
   const fetchData = async () => {
     try {
+      // Fetch category name
+      const { data: category, error: categoryError } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('id', id)
+        .single();
+
+      if (categoryError) {
+        throw categoryError;
+      }
+
+      setCategoryName(category?.name || '');
+
       // Fetch products
       const { data: products, error: productError } = await supabase
         .from('products')
@@ -244,7 +258,7 @@ function Category() {
   return (
     <>
       <Header />
-      <Titleforheader>Products in Category</Titleforheader>
+      <Titleforheader>{categoryName}  Category</Titleforheader>
 
       {brands.length > 0 && (
         <FilterWrapper>
@@ -282,13 +296,15 @@ function Category() {
               </Titledesign>
               <Rowprice>
                 <Price>${product.price}</Price>
-                <Primarybtn onClick={() => handleAddToCart(product.id)}>Add to cart</Primarybtn>
+                <Primarybtn onClick={() => handleAddToCart(product.id)}>
+                  Add to Cart
+                </Primarybtn>
               </Rowprice>
             </Productinfobox>
           </Productwrapper>
         ))}
       </Productsgrid>
-      <Footer/>
+      <Footer />
     </>
   );
 }
