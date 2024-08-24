@@ -97,7 +97,6 @@ export default function Header() {
   const { cartCount } = context;
 
   useEffect(() => {
-
   }, []);
 
   const checkUserSession = async () => {
@@ -125,6 +124,8 @@ export default function Header() {
       window.location.href = '/';
     }
   };
+
+  checkUserSession()
 
   return (
     <>

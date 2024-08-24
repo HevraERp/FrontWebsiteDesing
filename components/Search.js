@@ -182,10 +182,19 @@ export default function Search() {
     }
   }, [debouncedText]);
 
+
   const handleNavigation = (type, id) => {
-    const path = `/${type === 'brand' ? 'brands' : type === 'category' ? 'categories' : 'products'}/${id}`;
+    // Generate path based on type and id
+    const path = type === 'brand'
+      ? `/brand-{brand.id}/?=id${id}`
+      : type === 'category'
+      ? `/Category/?id=${id}`
+      : type === 'product'
+      ?` /Product/?id=${id}`
+      : '/'; 
+    
     router.push(path);
-  };
+  }; 
 
   const handleHistoryClick = (searchTerm) => {
     setQuery(searchTerm);

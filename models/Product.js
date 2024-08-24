@@ -197,7 +197,7 @@ function Product() {
       try {
         
         const [{ data: fetchedProducts, error: productsError }, { data: fetchedCategories, error: categoriesError }] = await Promise.all([
-          supabase.from('products').select('*'),
+          supabase.from('products').select('*').limit(28),
           supabase.from('categories').select('*'),
         ]);
 

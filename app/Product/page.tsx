@@ -8,6 +8,83 @@ import styled from "styled-components";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { createContext } from "vm";
+
+
+
+const ReviewFormWrapper = styled.div`
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+`;
+
+const FormTitle = styled.h3`
+  font-size: 22px;
+  color: #333;
+  margin-bottom: 15px;
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 15px;
+`;
+
+const Label = styled.label`
+  font-size: 16px;
+  color: #333;
+  display: block;
+  margin-bottom: 5px;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  box-sizing: border-box;
+`;
+
+const TextArea = styled.textarea`
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+  box-sizing: border-box;
+  resize: none;
+  height: 100px;
+`;
+
+const RatingWrapper = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const Star = styled.span<{ selected: boolean }>`
+  font-size: 24px;
+  color: ${({ selected }) => (selected ? '#FFD700' : '#ccc')};
+  margin-right: 5px;
+  cursor: pointer;
+`;
+
+const SubmitButton = styled.button`
+  background-color: #4c1d95;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+  &:hover {
+    background-color: #34156a;
+  }
+`;
+
+
+
 
 const Container = styled.div`
   max-width: 1100px;
@@ -132,6 +209,14 @@ const TabButton = styled.button<TabButtonProps>`
   }
 `;
 
+
+const Reviewresult = styled.div`
+  font-size: 20px;
+  padding-left: 10px;
+  
+`;
+
+
 const TabContent = styled.div`
   padding: 12px;
   border: 1px solid #f0f0f0;
@@ -188,22 +273,26 @@ export default function ProductPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'description' | 'reviews'>('description');
-  const [quantity, setQuantity] = useState<number>(1); // Local state for quantity
-  const [error, setError] = useState<string | null>(null); // Local state for error message
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [newReview, setNewReview] = useState({
-    name: '',
-    email: '',
-    rating: 1,
-    comment: '',
-  });
+  const [quantity, setQuantity] = useState<number>(1);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Track user login status
+  const [userId, setUserId] = useState<string | null>(null); // Store the user's ID
+  const { addToCart } = useContext(Cartcontext);
+  const [rating, setRating] = useState(0);
+const [reviews, setReviews] = useState <any []>([]);
+  const [content, setContent] = useState('');
 
   const searchParams = useSearchParams();
-  const id = searchParams?.get('id')  || '';
+  const id = searchParams?.get('id') || '';
+
+  useEffect(() => {
+    fetchReviews();
+    fetchData();
+    checkUserSession(); // Check if the user is logged in
+  }, [id]);
 
   const fetchData = async () => {
     try {
-      // Fetch product
       const { data: products, error: productError } = await supabase
         .from('products')
         .select('*')
@@ -219,20 +308,19 @@ export default function ProductPage() {
         image: product.img_url,
         price: product.price,
         description: product.description,
-        quantity: product.quantity, // Ensure quantity is included
+        quantity: product.quantity,
         category: product.category_id
       }));
 
       setProducts(formattedProducts);
-      setQuantity(formattedProducts[0]?.quantity ||  1); // Set initial quantity
-      setError(null); // Reset error on successful fetch
+      setQuantity(formattedProducts[0]?.quantity || 1);
+      setError(null);
 
-      // Fetch related products by brand
       const { data: relatedProducts, error: relatedProductError } = await supabase
         .from('products')
         .select('*')
         .eq('category_id', formattedProducts[0]?.category)
-        .neq('id', id) // Exclude the current product
+        .neq('id', id)
         .limit(3);
 
       if (relatedProductError) {
@@ -246,22 +334,41 @@ export default function ProductPage() {
         price: product.price,
         description: product.description
       })));
-      
     } catch (error) {
       console.error('Error fetching data:', error);
       setError('Failed to fetch product data.');
     }
-    
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [id]);
+  const checkUserSession = async () => {
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-  const { addToCart } = useContext(Cartcontext);
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (session && session.user) {
+        const userId_INAUTHENTICATE_TABLE = session.user.email;
+        const { data: user, error: userError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('email', userId_INAUTHENTICATE_TABLE);
+
+        const user_id = user[0]?.id || null;
+        setUserId(user_id);
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+    } catch (error) {
+      console.error('Error checking user session:', error);
+      setIsLoggedIn(false);
+    }
+  };
 
   const handleAddToCart = (productId: any) => {
-    if (quantity < 1||  quantity > (products[0]?.quantity || 0)) {
+    if (quantity < 1 || quantity > (products[0]?.quantity || 0)) {
       setError('Out of stock or invalid quantity.');
       return;
     }
@@ -271,19 +378,75 @@ export default function ProductPage() {
   const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newQuantity = Number(event.target.value);
     if (newQuantity < 1) {
-      setQuantity(1); 
+      setQuantity(1);
       setError('Quantity cannot be less than 1.');
-    } else if (newQuantity === 0) {
-      setQuantity(0); 
-      setError('Out of stock.');
     } else if (newQuantity > (products[0]?.quantity || 0)) {
-      setQuantity(products[0]?.quantity || 0); 
+      setQuantity(products[0]?.quantity || 0);
       setError('Out of stock.');
     } else {
       setQuantity(newQuantity);
-      setError(null); 
+      setError(null);
     }
   };
+
+  const fetchReviews = async () => {
+    try {
+      const { data: reviewData, error: reviewError } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('product_id', id)
+        .limit(3);
+
+      if (reviewError) {
+        throw reviewError;
+      }
+
+      setReviews(reviewData);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    }
+  };
+
+
+  const handleRating = (rate: number) => setRating(rate);
+
+  const handleReviewSubmit = async (event: { preventDefault: () => void; }) => {
+    event.preventDefault();
+
+    if (content.trim().length === 0) {
+      setError('Review cannot be empty.');
+      return;
+    }
+
+    try {
+      const { data: reviewData, error: reviewError } = await supabase
+        .from('reviews')
+        .insert([
+          {
+            user_id: userId,
+            product_id: id,
+            rating: rating,
+            comments: content,
+          }
+        ])
+        .select();
+
+      if (reviewError) {
+        throw reviewError;
+      }
+
+      setContent('');
+      setRating(0)
+      setError(null);
+      fetchReviews(); // Refresh reviews after submission
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      setError('Failed to submit review. Please try again.');
+    }
+  };
+
+
+  
 
   const renderTabContent = (product: any) => {
     if (activeTab === 'description') {
@@ -294,14 +457,12 @@ export default function ProductPage() {
             <h3>Related Products</h3>
             <RelatedProductWrapper>
               {relatedProducts.map((relatedProduct) => (
-                <div>
                 <RelatedProduct key={relatedProduct.id}>
                   <Relatedlink href={`/Product/?id=${relatedProduct.id}`}>
                     <RelatedImage src={relatedProduct.image} alt={relatedProduct.name} />
                     <RelatedTitle>{relatedProduct.name}</RelatedTitle>
                   </Relatedlink>
                 </RelatedProduct>
-                </div>
               ))}
             </RelatedProductWrapper>
           </RelatedProducts>
@@ -309,7 +470,51 @@ export default function ProductPage() {
       );
     }
 
-return <TabContent>Reviews content goes here.</TabContent>;
+    return (
+      <TabContent>
+        <h4>Customer Reviews</h4>
+          {reviews.length > 0 ? (
+            reviews.map((review, index) => (
+              <div key={index}>
+                <p><strong>Rating:</strong> {review.rating} / 5</p>
+                <p><strong>Comment:</strong> {review.comments}</p>
+                <hr />
+              </div>
+            ))
+          ) : (
+            <p>No reviews yet. Be the first to review!</p>
+          )}
+        {isLoggedIn ? (
+        <ReviewFormWrapper>
+        <FormTitle>Submit Your Review</FormTitle>
+        <form  onSubmit={handleReviewSubmit}>
+          <FormGroup>
+            <Label>Rating</Label>
+            <RatingWrapper>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star key={star} selected={star <= rating} onClick={() => handleRating(star)}>
+                  ★
+                </Star>
+              ))}
+            </RatingWrapper>
+          </FormGroup>
+          <FormGroup>
+            <Label>Review</Label>
+            <TextArea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Write your review here"
+              required
+            />
+          </FormGroup>
+          <SubmitButton type="submit">Submit Review</SubmitButton>
+        </form>
+      </ReviewFormWrapper>
+        ) : (
+          <ErrorMessage>Please log in to submit a review. <Link href="/login">Login here</Link>.</ErrorMessage>
+        )}
+      </TabContent>
+    );
   };
 
   return (
@@ -327,27 +532,27 @@ return <TabContent>Reviews content goes here.</TabContent>;
                 <div>
                   <Price>${product.price}</Price>
                   {product.quantity === 0 ? (
-                  <ErrorMessage>Out of stock</ErrorMessage>
-                ) : (
-                  <>
-                    <QuantityInput
-                      type="number"
-                      value={quantity}
-                      onChange={handleQuantityChange}
-                      min="1"
-                      max={product.quantity}
-                    />
-                     <Primarybtn
-                      onClick={() => handleAddToCart(product.id)}
-                      disabled={quantity < 1 || quantity > product.quantity}
-                    >
-                      Add to Cart
-                    </Primarybtn>
-                    {error && <ErrorMessage>{error}</ErrorMessage>}
-                  </>
-                )}
+                    <ErrorMessage>Out of stock</ErrorMessage>
+                  ) : (
+                    <>
+                      <QuantityInput
+                        type="number"
+                        value={quantity}
+                        onChange={handleQuantityChange}
+                        min="1"
+                        max={product.quantity}
+                      />
+                      <Primarybtn
+                        onClick={() => handleAddToCart(product.id)}
+                        disabled={quantity < 1 || quantity > product.quantity}
+                      >
+                        Add to Cart
+                      </Primarybtn>
+                      {error && <ErrorMessage>{error}</ErrorMessage>}
+                    </>
+                  )}
                 </div>
-                {error && <ErrorMessage>{error}</ErrorMessage>} {/* Show error message */}
+                {error && <ErrorMessage>{error}</ErrorMessage>}
               </ProductInfoBox>
             </ProductWrapper>
           ))}
