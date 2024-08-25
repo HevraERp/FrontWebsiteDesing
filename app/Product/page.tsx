@@ -7,7 +7,6 @@ import styled from "styled-components";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { createContext } from "vm";
 
 const ReviewFormWrapper = styled.div`
   background-color: #f9f9f9;
@@ -118,6 +117,7 @@ const MainImage = styled.img`
 `;
 
 const ProductInfoBox = styled.div`
+  position: relative;
   flex: 1;
   display: flex;
   padding-left: 20px;
@@ -183,6 +183,30 @@ const TabWrapper = styled.div`
 const TabHeader = styled.div`
   display: flex;
   margin-bottom: 8px;
+`;
+
+const HeartIcon = styled.svg`
+  position: absolute;
+  bottom: 10px;
+  left: 350px;
+  width: 28px;
+  height: 28px;
+  color: #b83a14;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+`;
+
+const HeartIconAfter = styled.svg`
+  position: absolute;
+  bottom: 10px;
+  left: 350px;
+  width: 28px;
+  height: 28px;
+  color: #b83a14;
+  fill: red;
+  stroke: currentColor;
+  stroke-width: 1.5;
 `;
 
 interface TabButtonProps {
@@ -260,28 +284,64 @@ const Relatedlink = styled(Link)`
 `;
 
 export default function ProductPage() {
+
   const [products, setProducts] = useState<any[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+  const [Favproduct, setFavproducts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"description" | "reviews">(
     "description"
   );
+
   const [quantity, setQuantity] = useState<number>(1);
   const [error, setError] = useState<string | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // Track user login status
-  const [userId, setUserId] = useState<string | null>(null); // Store the user's ID
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const { addToCart } = useContext(Cartcontext);
   const [rating, setRating] = useState(0);
   const [reviews, setReviews] = useState<any[]>([]);
   const [content, setContent] = useState("");
-
+  const [isFav, setIsfav] = useState<boolean>(false);
   const searchParams = useSearchParams();
   const id = searchParams?.get("id") || "";
 
-  useEffect(() => {
-    fetchReviews();
-    fetchData();
-    checkUserSession(); // Check if the user is logged in
-  }, [id]);
+  const fetchWishlist = async () => {
+    if (!userId) return;
+
+    try {
+      // fetching product for current user
+      const { data: wishlistItems, error } = await supabase
+        .from("wishlist")
+        .select("product_id")
+        .eq("user_id", userId);
+
+      if (error) throw error;
+      // add them to an array
+      const productIdS  = wishlistItems?.map((item) => item.product_id) || [];
+
+      if (productIdS.length > 0) {
+        const { data, error: productsError } = await supabase
+          .from("products")
+          .select("*")
+          .in("id", productIdS);
+
+        if (productsError) {
+          throw productsError;
+        }
+        const formattedProduct = data?.map((productItem) => ({
+          id: productItem.id,
+          name: productItem.name,
+          image: productItem.img_url,
+          price: productItem.price,
+        }));
+                      
+      const isFavorite = formattedProduct.some((item) => item.id.toString() === id);
+      setIsfav(isFavorite);
+        setFavproducts(formattedProduct);
+      }
+    } catch (error) {
+      setError("Failed to fetch wishlist.");
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -294,6 +354,7 @@ export default function ProductPage() {
         throw productError;
       }
 
+
       const formattedProducts = products?.map((product) => ({
         id: product.id,
         name: product.name,
@@ -303,10 +364,13 @@ export default function ProductPage() {
         quantity: product.quantity,
         category: product.category_id,
       }));
-
+  
       setProducts(formattedProducts);
       setQuantity(formattedProducts[0]?.quantity || 1);
       setError(null);
+
+
+
 
       const { data: relatedProducts, error: relatedProductError } =
         await supabase
@@ -334,6 +398,7 @@ export default function ProductPage() {
       setError("Failed to fetch product data.");
     }
   };
+
 
   const checkUserSession = async () => {
     try {
@@ -367,28 +432,27 @@ export default function ProductPage() {
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuantity = Number(e.target.value);
-  
+
     if (!isNaN(newQuantity) && newQuantity > 0) {
       setQuantity(newQuantity);
     } else {
-      setQuantity(1); // Ensure minimum quantity is 1 or handle error
-    }
-  };
-  
-  const handleAddToCart = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      if (quantity > 0 && quantity <= product.quantity) {
-        // Logic to add to cart
-        console.log('Item added to cart');
-      } else {
-        console.log('Invalid quantity');
-      }
-    } else {
-      console.log('Product not found');
+      setQuantity(1);
     }
   };
 
+  const handleAddToCart = (productId: string) => {
+    const product = products.find((p) => p.id === productId);
+    if (product) {
+      if (quantity > 0 && quantity <= product.quantity) {
+        // Logic to add to cart
+        console.log("Item added to cart");
+      } else {
+        console.log("Invalid quantity");
+      }
+    } else {
+      console.log("Product not found");
+    }
+  };
 
   const fetchReviews = async () => {
     try {
@@ -438,12 +502,46 @@ export default function ProductPage() {
       setContent("");
       setRating(0);
       setError(null);
-      fetchReviews(); // Refresh reviews after submission
+      fetchReviews();
     } catch (error) {
       console.error("Error submitting review:", error);
       setError("Failed to submit review. Please try again.");
     }
   };
+
+  async function handleAddtoWIshList() {
+    if (!isLoggedIn) {
+      setError("Please log in to add items to your wishlist.");
+      return;
+    }
+    try {
+      const { data: wishlist, error: wishlistError } = await supabase
+        .from("wishlist")
+        .insert([
+          {
+            user_id: userId,
+            product_id: id,
+          },
+        ])
+        .select();
+
+      if (wishlistError) {
+        throw wishlistError;
+      }
+
+      setIsfav(true);
+    } catch (error) {
+      console.error("Error adding to wishlist:", error);
+    }
+  }
+
+
+  useEffect(() => {
+    checkUserSession();
+    fetchWishlist();
+    fetchReviews();
+    fetchData();
+  }, [id, isLoggedIn]);
 
   const renderTabContent = (product: any) => {
     if (activeTab === "description") {
@@ -546,25 +644,50 @@ export default function ProductPage() {
                     <ErrorMessage>Out of stock</ErrorMessage>
                   ) : (
                     <>
-           <QuantityInput
-                          type="number"
-                          value={quantity}
-                          onChange={handleQuantityChange}
-                          min="1"
-                          max={products[0]?.quantity || 0}
+                      <QuantityInput
+                        type="number"
+                        value={quantity}
+                        onChange={handleQuantityChange}
+                        min="1"
+                        max={products[0]?.quantity || 0}
                       />
                       <Primarybtn
-                    onClick={() => handleAddToCart(products[0].id)}
-                    disabled
-                    
+                        onClick={() => addToCart(products[0].id)}
+                        disabled
                       >
                         Add to Cart
                       </Primarybtn>
+                      {!isFav ? (
+                        <HeartIcon
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          onClick={handleAddtoWIshList}
+                        >
+                          <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                        </HeartIcon>
+                      ) : (
+                        <HeartIconAfter
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          onClick={handleAddtoWIshList}
+                        >
+                          <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                        </HeartIconAfter>
+                      )}{" "}
                       {error && <ErrorMessage>{error}</ErrorMessage>}
                     </>
                   )}
                 </div>
-                {error && <ErrorMessage>{error}</ErrorMessage>}
               </ProductInfoBox>
             </ProductWrapper>
           ))}

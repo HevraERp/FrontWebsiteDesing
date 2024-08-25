@@ -1,11 +1,11 @@
 "use client";
-import styled from 'styled-components';
-import React, { useState, useEffect, useContext } from 'react';
-import Link from 'next/link';
-import { Cartcontext } from '@/components/Cartcontext'; 
-import { supabase } from '@/utils/supabase/client';
+import styled from "styled-components";
+import React, { useState, useEffect, useContext } from "react";
+import Link from "next/link";
+import { Cartcontext } from "@/components/Cartcontext";
+import { supabase } from "@/utils/supabase/client";
 
-import { useSearchParams,useRouter,usePathname } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 const Productsgrid = styled.div`
   display: grid;
   gap: 10px;
@@ -15,7 +15,6 @@ const Productsgrid = styled.div`
   @media screen and (min-width: 1024px) {
     grid-template-columns: 1fr 1fr 1fr 1fr;
     gap: 20px;
-    
   }
   background-color: #eee;
 `;
@@ -28,20 +27,20 @@ const CategoriesWrapper = styled.div`
   position: relative; /* Make this container the reference point for absolute positioning */
   width: 100%; /* Ensure it takes the full width of the container */
   height: 180px; /* zSet a fixed height for the container to manage overlap space */
-  margin:10px 8px;
+  margin: 10px 8px;
   overflow: hidden; /* Hide anything outside the bounds of this container */
   display: flex;
-  
+
   justify-content: flex-start; /* Align items to the left */
 `;
 
 const CategoryContainer = styled.div`
-  position:relative; /* Allows overlapping by positioning each circle absolutely */
+  position: relative; /* Allows overlapping by positioning each circle absolutely */
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin:0 -29px; /* Remove margin to ensure precise overlap */
-  padding-left:47px;
+  margin: 0 -29px; /* Remove margin to ensure precise overlap */
+  padding-left: 47px;
 `;
 
 const CategoryCircle = styled(Link)`
@@ -54,7 +53,7 @@ const CategoryCircle = styled(Link)`
   border-radius: 50%;
   box-shadow: 6px 6px 12px #bebebe, -6px -6px 12px #eee;
   text-decoration: none;
-  color: #0D3D29;
+  color: #0d3d29;
   font-size: 1rem;
   font-weight: 450;
   transition: all 0.3s ease;
@@ -62,7 +61,7 @@ const CategoryCircle = styled(Link)`
   overflow: hidden;
 
   &:before {
-    content: '';
+    content: "";
     position: absolute;
     width: 100%;
     height: 100%;
@@ -72,7 +71,7 @@ const CategoryCircle = styled(Link)`
     left: 100%;
     transition: all 0.3s ease;
   }
-  
+
   &:hover:before {
     top: -30%;
     left: -30%;
@@ -94,7 +93,7 @@ const CategoryCircle = styled(Link)`
 const Categorytitels = styled.h2`
   font-size: 1rem;
   font-weight: 600;
-  color: #0D3D29;
+  color: #0d3d29;
   margin-top: 10px;
   text-align: center;
 `;
@@ -119,7 +118,9 @@ const Whitebox = styled(Link)`
   }
 `;
 
-const Productwrapper = styled.div``;
+const Productwrapper = styled.div`
+  position: relative; /* To position the icon absolutely */
+`;
 
 const Titledesign = styled.div`
   justify-content: center;
@@ -139,16 +140,16 @@ const Title = styled(Link)`
 const Primarybtn = styled.button`
   background-color: transparent;
   border: 0;
-  color: #0D3D29;
+  color: #0d3d29;
   padding: 5px 15px;
   border-radius: 5px;
   font-size: 1rem;
-  border: 1px solid #0D3D29;
+  border: 1px solid #0d3d29;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   font-weight: 400;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   svg {
     height: 20px;
     margin-right: 5px;
@@ -187,31 +188,35 @@ function Product() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [query, setQuery] = useState(searchParams?.get('query') || "");
-  
-  const { addToCart } = useContext(Cartcontext);
+  const [query, setQuery] = useState(searchParams?.get("query") || "");
 
+  const { addToCart } = useContext(Cartcontext);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        
-        const [{ data: fetchedProducts, error: productsError }, { data: fetchedCategories, error: categoriesError }] = await Promise.all([
-          supabase.from('products').select('*').limit(28),
-          supabase.from('categories').select('*'),
+        const [
+          { data: fetchedProducts, error: productsError },
+          { data: fetchedCategories, error: categoriesError },
+        ] = await Promise.all([
+          supabase.from("products").select("*").limit(28),
+          supabase.from("categories").select("*"),
         ]);
 
-      
         if (productsError) {
           throw new Error(`Products fetching error: ${productsError.message}`);
         }
 
         if (categoriesError) {
-          throw new Error(`Categories fetching error: ${categoriesError.message}`);
+          throw new Error(
+            `Categories fetching error: ${categoriesError.message}`
+          );
         }
 
-      
-        if (Array.isArray(fetchedProducts) && Array.isArray(fetchedCategories)) {
+        if (
+          Array.isArray(fetchedProducts) &&
+          Array.isArray(fetchedCategories)
+        ) {
           const formattedProducts = fetchedProducts.map((item) => ({
             _id: item.id,
             description: item.description,
@@ -224,16 +229,16 @@ function Product() {
           const formattedCategories = fetchedCategories.map((category) => ({
             id: category.id,
             name: category.name,
-            image:category.images,
+            image: category.images,
           }));
-          
+
           setProducts(formattedProducts);
           setCategories(formattedCategories);
         } else {
-          setError('Data format is incorrect.');
+          setError("Data format is incorrect.");
         }
       } catch (fetchError) {
-        console.error('Fetch Error:', fetchError); 
+        console.error("Fetch Error:", fetchError);
         setError(fetchError.message);
       } finally {
         setLoading(false);
@@ -256,60 +261,59 @@ function Product() {
   };
 
   const handleSearch = (term) => {
-    setQuery(term)
+    setQuery(term);
     const params = new URLSearchParams(searchParams);
     if (term) {
-      params.set('query', term);
+      params.set("query", term);
     } else {
-      params.delete('query');
+      params.delete("query");
     }
     replace(`${pathname}?${params.toString()}`);
   };
 
-
-
   return (
     <>
       <Titleforheader>Categories</Titleforheader>
-     
+
       <CategoriesWrapper>
-        
-        {categories.map((category,index) => (
+        {categories.map((category, index) => (
           <>
-          <div key={category.id}>
-          <CategoryContainer>
-        <CategoryCircle href={`/Category/?id=${category.id}`}>
-          <img src={category.image} alt={category.name} />
-        </CategoryCircle>
-        <Categorytitels>{category.name}</Categorytitels>
-        </CategoryContainer>
-      </div>
-         </>
+            <div key={category.id}>
+              <CategoryContainer>
+                <CategoryCircle href={`/Category/?id=${category.id}`}>
+                  <img src={category.image} alt={category.name} />
+                </CategoryCircle>
+                <Categorytitels>{category.name}</Categorytitels>
+              </CategoryContainer>
+            </div>
+          </>
         ))}
-       
       </CategoriesWrapper>
-      
 
       <Productsgrid>
-        {products.length > 0 && products.map((product) => (
-          <Productwrapper key={product._id}>
-            <Whiteboxy>
-            <Whitebox href={`/Product/?id=${product._id}`}>
-  <img src={product.image} alt={product.name} />
-</Whitebox>
-
-            </Whiteboxy>
-            <Productinfobox>
-              <Titledesign>
-              <Title href={`/Product/?id=${product._id}`}>{product.name}</Title>
-              </Titledesign>
-              <Rowprice>
-                <Price>${product.price}</Price>
-                <Primarybtn onClick={() => handleAddToCart(product._id)}>Add to cart</Primarybtn>
-              </Rowprice>
-            </Productinfobox>
-          </Productwrapper>
-        ))}
+        {products.length > 0 &&
+          products.map((product) => (
+            <Productwrapper key={product._id}>
+              <Whiteboxy>
+                <Whitebox href={`/Product/?id=${product._id}`}>
+                  <img src={product.image} alt={product.name} />
+                </Whitebox>
+              </Whiteboxy>
+              <Productinfobox>
+                <Titledesign>
+                  <Title href={`/Product/?id=${product._id}`}>
+                    {product.name}
+                  </Title>
+                </Titledesign>
+                <Rowprice>
+                  <Price>${product.price}</Price>
+                  <Primarybtn onClick={() => handleAddToCart(product._id)}>
+                    Add to cart
+                  </Primarybtn>
+                </Rowprice>
+              </Productinfobox>
+            </Productwrapper>
+          ))}
       </Productsgrid>
     </>
   );
