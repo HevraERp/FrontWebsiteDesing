@@ -157,12 +157,12 @@ export default function Search() {
           _id: item.id,
           title: item.name,
           type: 'category',
-        })) || [],
+        }))||  [],
         ...productData?.map(item => ({
           _id: item.id,
           title: item.name,
           type: 'product',
-        })) || [],
+        }))||  [],
       ].slice(0, 10); // Limit to 10 results
 
       setResults(combinedResults);
@@ -172,7 +172,7 @@ export default function Search() {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     fetchData();
     if (debouncedText && debouncedText.length > 1) {
       setHistory(prevHistory => {
@@ -182,19 +182,18 @@ export default function Search() {
     }
   }, [debouncedText]);
 
-
   const handleNavigation = (type, id) => {
-    // Generate path based on type and id
     const path = type === 'brand'
-      ? `/brand-{brand.id}/?=id${id}`
+      ?`/brand-${id}`
       : type === 'category'
-      ? `/Category/?id=${id}`
+      ? `/category/${id}`
       : type === 'product'
       ?` /Product/?id=${id}`
-      : '/'; 
+      : '/';
     
     router.push(path);
-  }; 
+    setShowResults(false); // Hide results after navigation
+  };
 
   const handleHistoryClick = (searchTerm) => {
     setQuery(searchTerm);
@@ -224,9 +223,7 @@ export default function Search() {
             setShowResults(true); // Show results as user types
           }}
           placeholder="Search..."
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-        />
+              />
         {showHistory && !debouncedText && (
           <HistoryList>
             {history.map((item, index) => (

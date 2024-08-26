@@ -182,11 +182,46 @@ export default function CardPage() {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneName] = useState("");
 
-  useEffect(() => {
-    const fetchProducts = async () => {
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const checkUserSession = async () => {
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+  
+      if (sessionError) {
+        throw sessionError;
+      }
+
+      if (session?.user) {
+        const userId_INAUTHENTICATE_TABLE = session.user.email;
+        const { data: user, error: userError } = await supabase
+          .from("clients")
+          .select("id")
+          .eq("email", userId_INAUTHENTICATE_TABLE);
+  
+        if (userError) {
+          console.error("Error fetching user from Supabase:", userError);
+          return;
+        }
+  
+        const user_id = user?.[0]?.id;
+        setUserId(user_id);
+    
+      } 
+    } catch (error) {
+      console.error("Error checking user session:", error);
+    }
+  };
+
+
+const fetchProducts = async () => {
       const { data: cartData, error: CardError } = await supabase
         .from("shoppingcart")
-        .select("*");
+        .select("*")
+        .eq('user_id',userId);
 
       if (CardError) {
         console.error("Error fetching cards from Supabase:", CardError);
@@ -235,10 +270,8 @@ export default function CardPage() {
           console.error("Error:", error);
         }
       }
-    };
+ };
 
-    fetchProducts();
-  }, []);
 
   function moreOfThisProduct(id: string) {
    addToCart(id);
@@ -250,9 +283,27 @@ export default function CardPage() {
         : product
     )
   );
-
 }
+
   
+
+  
+useEffect(() => {
+  const initialize = async () => {
+    await checkUserSession(); 
+  };
+
+  initialize();
+}, []);
+
+useEffect(() => {
+  if (userId) {
+    fetchProducts();
+  }
+}, [userId]);
+
+
+
 function lessOfThisProduct(id: string) {
   removeProduct(id);
   setProducts(prevProducts =>
@@ -368,4 +419,4 @@ function lessOfThisProduct(id: string) {
       <Footer />
     </>
   );
-}
+  }

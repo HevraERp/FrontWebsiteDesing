@@ -7,6 +7,34 @@ export const Cartcontext = createContext();
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
+const [userId, setUserId] = useState(null);
+
+
+const checkUserSession = async () => {
+  try {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      throw sessionError;
+    }
+
+    if (session && session.user) {
+      const userId_INAUTHENTICATE_TABLE = session.user.email;
+      const { data: user, error: userError } = await supabase
+        .from("clients")
+        .select("id")
+        .eq("email", userId_INAUTHENTICATE_TABLE);
+
+      const user_id = user?.[0]?.id || null;
+      setUserId(user_id);
+    } 
+  } catch (error) {
+    console.error("Error checking user session:", error);
+  }
+};
 
   useEffect(() => {
     const fetchCart = async () => {
@@ -21,6 +49,8 @@ export function CartProvider({ children }) {
       }
     };
 
+    
+checkUserSession();
     fetchCart();
   }, []);
 
@@ -46,7 +76,7 @@ export function CartProvider({ children }) {
     } else {
       const { data, error } = await supabase
         .from('shoppingcart')
-        .insert([{product_id :  product_id, quantity: 1 }])
+        .insert([{ user_id:userId ,  product_id :  product_id, quantity: 1 }])
         .select();
 
       if (error) {

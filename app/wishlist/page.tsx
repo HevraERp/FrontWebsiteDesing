@@ -114,23 +114,47 @@ const Titleforh3 = styled.h3`
 export default function Wishlist() {
   const [products, setProducts] = useState<any[]>([]);
   const { addToCart } = useContext(Cartcontext);
+  const [userId, setUserId] = useState<string | null>(null);
+
+
+  const checkUserSession = async () => {
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        throw sessionError;
+      }
+      if (session && session.user) {
+        const userId_INAUTHENTICATE_TABLE = session.user.email;
+        const { data: user, error: userError } = await supabase
+          .from("clients")
+          .select("id")
+          .eq("email", userId_INAUTHENTICATE_TABLE);
+
+        const user_id = user?.[0]?.id || null;
+        setUserId(user_id);
+      } 
+    } catch (error) {
+      console.error("Error checking user session:", error);
+    }
+  };
+
 
   const fetchData = async () => {
     try {
-      // Fetch product IDs from wishlist
-      const { data: wishlistData, error: wishlistError } = await supabase
-        .from('wishlist')
-        .select('product_id');
-      
-      if (wishlistError) {
-        throw wishlistError;
-      }
+      const { data: wishlistItems, error } = await supabase
+      .from("wishlist")
+      .select("product_id")
+      .eq("user_id", userId);
 
-      // Extract product IDs
-      const productIds = wishlistData?.map(item => item.product_id) || [];
+      if (error) throw error;
+
+      const productIds = wishlistItems?.map(item => item.product_id) || [];
 
       if (productIds.length > 0) {
-        // Fetch product details using the IDs
         const { data: productsData, error: productsError } = await supabase
           .from("products")
           .select("*")
@@ -139,8 +163,6 @@ export default function Wishlist() {
         if (productsError) {
           throw productsError;
         }
-
-        // Format and set products
         const formattedProducts = productsData?.map(product => ({
           id: product.id,
           name: product.name,
@@ -159,9 +181,21 @@ export default function Wishlist() {
     addToCart(productId);
   };
 
+
   useEffect(() => {
-    fetchData();
+    const initialize = async () => {
+      await checkUserSession(); 
+    };
+  
+    initialize();
   }, []);
+  
+  useEffect(() => {
+    if (userId) {
+      fetchData();
+    }
+  }, [userId]);
+  
   
   return (
     <>

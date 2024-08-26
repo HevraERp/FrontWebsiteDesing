@@ -336,7 +336,7 @@ export default function ProductPage() {
                       
       const isFavorite = formattedProduct.some((item) => item.id.toString() === id);
       setIsfav(isFavorite);
-        setFavproducts(formattedProduct);
+      setFavproducts(formattedProduct);
       }
     } catch (error) {
       setError("Failed to fetch wishlist.");
@@ -514,6 +514,16 @@ export default function ProductPage() {
       setError("Please log in to add items to your wishlist.");
       return;
     }
+
+    if(isFav){
+      const { data, error } = await supabase
+      .from("wishlist")
+      .delete()
+      .eq('product_id',id)
+      .select();
+      setIsfav(false);
+      return;
+    }else{
     try {
       const { data: wishlist, error: wishlistError } = await supabase
         .from("wishlist")
@@ -532,7 +542,7 @@ export default function ProductPage() {
       setIsfav(true);
     } catch (error) {
       console.error("Error adding to wishlist:", error);
-    }
+    }}
   }
 
 
@@ -653,7 +663,7 @@ export default function ProductPage() {
                       />
                       <Primarybtn
                         onClick={() => addToCart(products[0].id)}
-                        disabled
+                        
                       >
                         Add to Cart
                       </Primarybtn>
