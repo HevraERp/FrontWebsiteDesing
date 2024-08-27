@@ -66,7 +66,7 @@ const Star = styled.span<{ selected: boolean }>`
 `;
 
 const SubmitButton = styled.button`
-  background-color: #4c1d95;
+  background-color: #000;
   color: #fff;
   padding: 10px 20px;
   border: none;
@@ -148,7 +148,7 @@ const QuantityInput = styled.input`
   padding: 8px;
   font-size: 16px;
   margin-right: 20px;
-  border: 1px solid #4c1d95;
+  border: 1px solid #000;
   border-radius: 3px;
   text-align: center;
 `;
@@ -166,7 +166,7 @@ const Primarybtn = styled.button`
   padding: 10px 20px;
   border-radius: 5px;
   font-size: 1.2rem;
-  border: 1px solid #4c1d95;
+  border: 1px solid #000;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -186,27 +186,26 @@ const TabHeader = styled.div`
 `;
 
 const HeartIcon = styled.svg`
-  position: absolute;
-  bottom: 10px;
-  left: 350px;
   width: 28px;
   height: 28px;
   color: #b83a14;
+  padding-left:16px;
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
+  
+  cursor: pointer; /* Optional: to indicate it's clickable */
 `;
 
 const HeartIconAfter = styled.svg`
-  position: absolute;
-  bottom: 10px;
-  left: 350px;
   width: 28px;
   height: 28px;
   color: #b83a14;
   fill: red;
+   padding-left:16px;
   stroke: currentColor;
   stroke-width: 1.5;
+  cursor: pointer; /* Optional: to indicate it's clickable */
 `;
 
 interface TabButtonProps {
@@ -214,7 +213,7 @@ interface TabButtonProps {
 }
 
 const TabButton = styled.button<TabButtonProps>`
-  background-color: ${({ active }) => (active ? "#000" : "#f0f0f0")};
+  background-color: ${({ active }) => (active ? "#000" : "#000")};
   color: ${({ active }) => (active ? "white" : "#333")};
   padding: 10px 20px;
   border: none;
@@ -244,7 +243,10 @@ const TabContent = styled.div`
 const RelatedProducts = styled.div`
   margin-top: 10px;
 `;
+const Linklogin=styled(Link)`
 
+color:#000;
+`;
 const RelatedProductWrapper = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -439,18 +441,12 @@ export default function ProductPage() {
       setQuantity(1);
     }
   };
-
   const handleAddToCart = (productId: string) => {
-    const product = products.find((p) => p.id === productId);
-    if (product) {
-      if (quantity > 0 && quantity <= product.quantity) {
-        // Logic to add to cart
-        console.log("Item added to cart");
-      } else {
-        console.log("Invalid quantity");
-      }
-    } else {
-      console.log("Product not found");
+  
+    if(isLoggedIn){
+      addToCart(productId)
+    }else{
+      setError('please loggin to add to card')
     }
   };
 
@@ -629,7 +625,7 @@ export default function ProductPage() {
         ) : (
           <ErrorMessage>
             Please log in to submit a review.{" "}
-            <Link href="/login">Login here</Link>.
+            <Linklogin href="/login">Login here</Linklogin>.
           </ErrorMessage>
         )}
       </TabContent>
@@ -662,7 +658,7 @@ export default function ProductPage() {
                         max={products[0]?.quantity || 0}
                       />
                       <Primarybtn
-                        onClick={() => addToCart(products[0].id)}
+                        onClick={() => handleAddToCart(products[0].id)}
                         
                       >
                         Add to Cart
@@ -670,12 +666,8 @@ export default function ProductPage() {
                       {!isFav ? (
                         <HeartIcon
                           xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                          viewBox="0 0 24 18"
+                         
                           onClick={handleAddtoWIshList}
                         >
                           <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
@@ -683,7 +675,7 @@ export default function ProductPage() {
                       ) : (
                         <HeartIconAfter
                           xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 24 24"
+                          viewBox="0 0 24 18"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="1.5"

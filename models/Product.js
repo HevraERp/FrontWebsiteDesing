@@ -137,8 +137,9 @@ const Title = styled(Link)`
   padding: 0 50px;
 `;
 
-const Primarybtn = styled.button`
+const Primarybtn = styled(Link)`
   background-color: transparent;
+  text-decoration:none;
   border: 0;
   color: #0d3d29;
   padding: 5px 15px;
@@ -256,10 +257,6 @@ function Product() {
     return <div>Error: {error}</div>;
   }
 
-  const handleAddToCart = (productId) => {
-    addToCart(productId);
-  };
-
   const handleSearch = (term) => {
     setQuery(term);
     const params = new URLSearchParams(searchParams);
@@ -307,7 +304,7 @@ function Product() {
                 </Titledesign>
                 <Rowprice>
                   <Price>${product.price}</Price>
-                  <Primarybtn onClick={() => handleAddToCart(product._id)}>
+                  <Primarybtn  href={`/Product/?id=${product._id}`}>
                     Add to cart
                   </Primarybtn>
                 </Rowprice>
