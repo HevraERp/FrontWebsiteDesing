@@ -89,7 +89,7 @@ const Centre = styled.div`
 
 const FormWrapper = styled.div`
   max-width: 1000px;
-  margin: auto;
+  margin-top:0;
   padding: 32px;
   background-color: #fff;
   border-radius: 8px;
@@ -187,6 +187,52 @@ const ErrorMessage = styled.div`
   margin-top: 10px;
 `;
 
+const SidebarWrapper = styled.div`
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 300px;
+  background-color: #fff;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+  transform: ${(props) =>
+    props.isOpen ? "translateX(0)" : "translateX(100%)"};
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
+`;
+
+const SidebarContent = styled.div`
+  padding: 20px;
+  height: calc(100% - 40px); 
+  overflow-y: auto;
+
+  img {
+    max-width: 90px;
+    max-height: 100px;
+  }
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+`;
+const HistoryIcon = styled.div`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  color: #fff;
+  padding: 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 1001;
+`;
+
+
 export default function CardPage() {
   const { addToCart, removeProduct } = useContext(Cartcontext);
   const [cart, setCart] = useState<any[]>([]);
@@ -203,7 +249,43 @@ export default function CardPage() {
   const [cardExpiryDate, setCardExpiryDate] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
 
-  const [totalOrder, setTotal] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const HistoryIconSVG = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="1.5"
+      stroke="currentColor"
+      className="size-6"
+      width="24"
+      height="24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
+    </svg>
+  );
+
+  const CloseButtonSVG = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="1.5"
+      stroke="currentColor"
+      className="size-6"
+      width="24"
+      height="24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+  );
+
+
 
   const checkUserSession = async () => {
     try {
@@ -388,7 +470,7 @@ export default function CardPage() {
 
     const orderItemsResults = await Promise.all(insertOrderItemsPromises);
 
-    // Check for any errors in inserting order items
+   
     orderItemsResults.forEach(({ error: orderItemError }) => {
       if (orderItemError) {
         console.error("Error inserting order item:", orderItemError.message);
@@ -476,8 +558,6 @@ export default function CardPage() {
     }
   }
 
-
-
   const fetchOrderHistory = async () => {
     try {
       // Fetch orders
@@ -485,7 +565,7 @@ export default function CardPage() {
         .from("orders")
         .select("id, total_amount, created_at")
         .eq("user_id", userId);
-        
+
       if (ordersError) {
         throw ordersError;
       }
@@ -522,10 +602,7 @@ export default function CardPage() {
             ...order,
             items: itemsWithProducts,
             products,
-
           };
-
-
         })
       );
       setOrders(ordersWithDetails);
@@ -593,45 +670,51 @@ export default function CardPage() {
               )}
             </Box>
 
-            <Box>
-  <h2>Your Order History</h2>
-  <StyledTable>
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Quantity</th>
-        <th>Price</th>
-      </tr>
-    </thead>
-    <tbody>
-      {orders.map((order) => (
-        <React.Fragment key={order.id}>
-          {order.items.map((item: any) => (
-            <tr key={`${order.id}-${item.product_id}`}>
-              <ProductInfoCell>
-                <ProductImageBox>
-                  <img
-                    src={item.product.img_url}
-                    alt={item.product.name}
-                  />
-                </ProductImageBox>
-                {item.product.name}
-              </ProductInfoCell>
-              <td>{item.quantity}</td>
-              <td>${item.price}</td>
-            </tr>
-          ))}
-          <tr>
-            <td>
-              <strong>Total: ${order.total_amount}</strong> {/* Display total for the order */}
-            </td>
-          </tr>
-        </React.Fragment>
-      ))}
-    </tbody>
-  </StyledTable>
-</Box>
-
+            
+            <HistoryIcon onClick={toggleSidebar}>
+        <HistoryIconSVG />
+      </HistoryIcon>
+            <SidebarWrapper isOpen={isSidebarOpen}>
+              <CloseButton onClick={toggleSidebar}>×</CloseButton>
+              <SidebarContent>
+                <h2>Your Order History</h2>
+                <StyledTable>
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Quantity</th>
+                      <th>Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((order) => (
+                      <React.Fragment key={order.id}>
+                        {order.items.map((item: any) => (
+                          <tr key={`${order.id}-${item.product_id}`}>
+                            <ProductInfoCell>
+                              <ProductImageBox>
+                                <img
+                                  src={item.product.img_url}
+                                  alt={item.product.name}
+                                />
+                              </ProductImageBox>
+                              {item.product.name}
+                            </ProductInfoCell>
+                            <td>{item.quantity}</td>
+                            <td>${item.price}</td>
+                          </tr>
+                        ))}
+                        <tr>
+                          <td>
+                            <strong>Total: ${order.total_amount}</strong>{" "}
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </StyledTable>
+              </SidebarContent>
+            </SidebarWrapper>
             {!!cart?.length && (
               <FormWrapper>
                 <FormTitle>Complete your order</FormTitle>

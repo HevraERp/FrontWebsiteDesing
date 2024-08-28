@@ -95,7 +95,8 @@ const ProductWrapper = styled.div`
   background-color: #fff;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 3px 6px rgba(3, 3, 3, 0.2);
+  margin-top: 20px;
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: row;
   gap: 20px;
@@ -260,7 +261,7 @@ const RelatedProduct = styled.div`
   text-align: center;
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0px 6px rgba(0, 0, 0, 0.2);
   padding: 13px;
 `;
 

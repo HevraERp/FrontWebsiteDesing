@@ -39,8 +39,9 @@ const checkUserSession = async () => {
   useEffect(() => {
     const fetchCart = async () => {
       const { data, error } = await supabase
-        .from('shoppingcart')
-        .select('*');
+      .from("shoppingcart")
+      .select("*")
+      .eq("user_id", userId);
 
       if (error) {
         console.error('Error fetching cart:', error);
