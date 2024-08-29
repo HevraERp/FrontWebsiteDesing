@@ -172,7 +172,7 @@ const CheckboxLabel = styled.label<{ checked?: boolean }>`
   align-items: center;
   cursor: pointer;
   font-size: 0.9rem; /* Reduced font-size */
-  color: ${({ checked }) => (checked ? '#0D3D29' : '#000')};
+  color: ${({ checked }) => (checked ? '#000' : '#000')};
   font-weight: ${({ checked }) => (checked ? 'bold' : 'normal')};
   position: relative;
   padding-left: 24px; /* Adjusted padding */
@@ -183,10 +183,10 @@ const CheckboxLabel = styled.label<{ checked?: boolean }>`
     display: inline-block;
     width: 16px; /* Adjusted size */
     height: 16px; /* Adjusted size */
-    border: 2px solid ${({ checked }) => (checked ? '#0D3D29' : '#aaa')};
+    border: 2px solid ${({ checked }) => (checked ? '#000' : '#aaa')};
     border-radius: 4px;
     margin-right: 6px; /* Adjusted margin */
-    background-color: ${({ checked }) => (checked ? '#0D3D29' : 'transparent')};
+    background-color: ${({ checked }) => (checked ? '#000' : 'transparent')};
     position: relative;
     transition: background-color 0.3s ease, border-color 0.3s ease;
 

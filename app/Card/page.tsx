@@ -16,6 +16,7 @@ import Footer from "@/components/Footer";
 import { supabase } from "@/utils/supabase/client";
 import Button from "@/components/Button";
 import React from "react";
+import Product from "@/models/Product";
 
 const ColumnsWrapper = styled.div`
   display: grid;
@@ -89,7 +90,7 @@ const Centre = styled.div`
 
 const FormWrapper = styled.div`
   max-width: 1000px;
-  margin-top:0;
+  margin-top: 0;
   padding: 32px;
   background-color: #fff;
   border-radius: 8px;
@@ -203,7 +204,7 @@ const SidebarWrapper = styled.div`
 
 const SidebarContent = styled.div`
   padding: 20px;
-  height: calc(100% - 40px); 
+  height: calc(100% - 40px);
   overflow-y: auto;
 
   img {
@@ -232,6 +233,17 @@ const HistoryIcon = styled.div`
   z-index: 1001;
 `;
 
+const SubmitButton = styled.button`
+  background-color: #000;
+  color: #fff;
+  padding: 5px 5px;
+  border: none;
+  border-radius: 4px;
+  margin: 5px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease-in-out;
+`;
 
 export default function CardPage() {
   const { addToCart, removeProduct } = useContext(Cartcontext);
@@ -248,7 +260,7 @@ export default function CardPage() {
   const [cardSecurityCode, setCardSecurityCode] = useState("");
   const [cardExpiryDate, setCardExpiryDate] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
-
+  const [isButtonDisabled, setIsButtonDisabled] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -266,26 +278,13 @@ export default function CardPage() {
       width="24"
       height="24"
     >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5"
+      />
     </svg>
   );
-
-  const CloseButtonSVG = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="size-6"
-      width="24"
-      height="24"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
-
-
 
   const checkUserSession = async () => {
     try {
@@ -418,8 +417,10 @@ export default function CardPage() {
     const productTotal = product.price * product.quantity;
     total += productTotal;
   }
+
   const handleOrder = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsButtonDisabled(true);
 
     if (
       !userId ||
@@ -470,7 +471,6 @@ export default function CardPage() {
 
     const orderItemsResults = await Promise.all(insertOrderItemsPromises);
 
-   
     orderItemsResults.forEach(({ error: orderItemError }) => {
       if (orderItemError) {
         console.error("Error inserting order item:", orderItemError.message);
@@ -478,7 +478,7 @@ export default function CardPage() {
     });
 
     // Insert payments
-    const { data: payments, error: paymentError } = await supabase
+    const { error: paymentError } = await supabase
       .from("payments")
       .insert([
         {
@@ -499,7 +499,7 @@ export default function CardPage() {
     }
 
     // Insert shipping data
-    const { data: shipping, error: shippingError } = await supabase
+    const { error: shippingError } = await supabase
       .from("shipping")
       .insert([
         {
@@ -515,6 +515,30 @@ export default function CardPage() {
     if (shippingError) {
       console.log("error inserting data to shipping table " + shippingError);
     }
+
+    // const updateProductPromises = products.map(async (product) => {
+    //   const correspondingItem = cart.find(
+    //     (item) => item.product_id === product._id
+    //   );
+    //   console.log(product._id);
+    //   console.log(correspondingItem);
+
+    //   if (correspondingItem) {
+    //     const { error: productUpdateError } = await supabase
+    //     .from("products")
+    //     .update({ quantity: product.quantity - correspondingItem.quantity })
+    //     .eq("id", product._id);
+
+    //     if (productUpdateError) {
+    //       console.error(
+    //         `Error updating product quantity for product ID ${product._id}:`,
+    //         productUpdateError.message
+    //       );
+    //     }
+    //   }
+    // });
+
+    // await Promise.all(updateProductPromises);
 
     // Clear the cart in the database
     const { error: clearCartError } = await supabase
@@ -540,21 +564,43 @@ export default function CardPage() {
     setCart([]);
     setProducts([]);
     alert(
-      "we will email you as soon as admin accespted your order thanks for your patient"
+      "we will email you as soon as admin accept your order thank you for your patient"
     );
   };
 
-  async function checkingOrderAccept() {
-    const { data, error } = await supabase
+  async function checkingOrderAccept(order_id: string) {
+    const { data: orders, error } = await supabase
       .from("orders")
       .select("status")
-      .eq("user_id", userId);
+      .eq("id", order_id);
+
     if (error) {
       console.log(error.message);
+      return;
     }
 
-    if (data && data.length > 0 && data[0].status === "accepted") {
-      alert("Your order has been accepted");
+    if (orders) {
+      for (const order of orders) {
+        if (order.status === "pending") {
+          alert("waiting for admin to accept your order");
+          break;
+        }
+
+        if (order.status === "accepted") {
+          alert("Your order has been accepted");
+          break;
+        }
+        if (order.status === "canceled") {
+          alert(
+            "Your order has been canceled because we don't have enough items to accept your order"
+          );
+          break;
+        }
+        if (order.status === "completed") {
+          alert("Your order has been sent to your location");
+          break;
+        }
+      }
     }
   }
 
@@ -607,7 +653,6 @@ export default function CardPage() {
       );
       setOrders(ordersWithDetails);
     } catch (error) {
-      // Assert the type of error as Error
       if (error instanceof Error) {
         setError(error.message);
       } else {
@@ -670,10 +715,9 @@ export default function CardPage() {
               )}
             </Box>
 
-            
             <HistoryIcon onClick={toggleSidebar}>
-        <HistoryIconSVG />
-      </HistoryIcon>
+              <HistoryIconSVG />
+            </HistoryIcon>
             <SidebarWrapper isOpen={isSidebarOpen}>
               <CloseButton onClick={toggleSidebar}>×</CloseButton>
               <SidebarContent>
@@ -708,6 +752,14 @@ export default function CardPage() {
                           <td>
                             <strong>Total: ${order.total_amount}</strong>{" "}
                           </td>
+                          <td colSpan={2}>
+                            <SubmitButton
+                              onClick={() => checkingOrderAccept(order.id)}
+                            >
+                              {" "}
+                              order status{" "}
+                            </SubmitButton>
+                          </td>
                         </tr>
                       </React.Fragment>
                     ))}
@@ -726,24 +778,34 @@ export default function CardPage() {
                       placeholder="Country"
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
+                      pattern="^[A-Za-z\s]+$"
+                      required
                     />
                     <InputField
                       type="text"
                       placeholder="City"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
+                      pattern="^[A-Za-z\s]+$"
+                      required
                     />
+
                     <InputField
                       type="text"
-                      placeholder="Street Address"
+                      placeholder="Street"
                       value={street}
                       onChange={(e) => setStreet(e.target.value)}
+                      pattern="[A-Za-z\s]*"
+                      required
                     />
                     <InputField
                       type="text"
-                      placeholder="ZIP Code"
+                      placeholder="Zip Code"
                       value={zipCode}
                       onChange={(e) => setZipCode(e.target.value)}
+                      pattern="\d{5}"
+                      maxLength={5}
+                      required
                     />
                   </InputGrid>
 
@@ -754,31 +816,41 @@ export default function CardPage() {
                       placeholder="Cardholder Name"
                       value={cardholderName}
                       onChange={(e) => setCardholderName(e.target.value)}
+                      pattern="[A-Za-z\s]*"
+                      required
                     />
                     <InputField
                       type="text"
                       placeholder="Card Number"
                       value={cardNumber}
                       onChange={(e) => setCardNumber(e.target.value)}
+                      pattern="\d{16}"
+                      maxLength={16}
+                      required
                     />
                     <InputField
                       type="text"
-                      placeholder="Security Code"
+                      placeholder="Security Code (CVV)"
                       value={cardSecurityCode}
                       onChange={(e) => setCardSecurityCode(e.target.value)}
+                      pattern="\d{3}"
+                      maxLength={3}
+                      required
                     />
                     <InputField
-                      type="date"
+                      type="text"
                       placeholder="Expiry Date (MM/YY)"
                       value={cardExpiryDate}
                       onChange={(e) => setCardExpiryDate(e.target.value)}
+                      pattern="(0[1-9]|1[0-2])\/\d{2}"
+                      maxLength={5}
+                      required
                     />
                   </InputGrid>
 
                   <ButtonGroup>
-                    <CancelButton type="button">Cancel</CancelButton>
-                    <PurchaseButton type="submit">
-                      Complete Purchase
+                    <PurchaseButton type="submit" disabled={isButtonDisabled}>
+                      {isButtonDisabled ? "Processing..." : "Complete Purchase"}
                     </PurchaseButton>
                   </ButtonGroup>
                 </Form>
